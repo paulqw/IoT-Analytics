@@ -1,0 +1,123 @@
+#### Load libraries & Setup ####
+install.packages("installr")
+suppressPackageStartupMessages(library(installr))
+library(installr)
+updateR()
+
+install.packages("pacman")
+library(pacman)
+p_load(contrib.url, doParallel, here, readr, rstudioapi,        #parallel computing, relative path
+       #caret, C50, caretEnsemble, mboost, mlr, Metrics, randomForest, party, MASS, 
+       #ParamHelpers, hydroGOF #Classification and Regression
+       #cluster, corrplot, fpc, e1071, recipes, Hmisc, #Clustering: Corr visulization, Clustering & SVM, 
+       ggplot2, ggpubr, RColorBrewer, lattice, dygraphs, #Visualization
+       ade4, inum, reshape,  #Cleaning, Preprocessing
+       #FactoMineR, factoextra, #PCA, MCA
+       plyr, dplyr, tidyr, tidyverse, textclean, 
+       #arules, arulesViz,    # ASsociation Rules Mining: analyzing and visualize transactional data
+       #markdown, shiny, tinytex, rmdformats, knitr #html docu, dashboard, Latex for PDF docu
+       RMySQL, lubridate, # Time Series: MySQL, functions for DateTime
+       #BBmisc, asbio
+       imputeTS, padr #interpolate missing values
+)
+
+## Enable parallel computing
+cl <- makePSOCKcluster(4)
+registerDoParallel(cl)
+
+## Disable scientific notation
+options(scipen = 999)
+
+## Create a database connection 
+con = dbConnect(MySQL(), user='deepAnalytics', password='Sqltask1234!', 
+                dbname='dataanalytics2018', 
+                host='data-analytics-2018.cbrosir2cswx.us-east-1.rds.amazonaws.com')
+
+## File directory
+current_path = getActiveDocumentContext()$path
+setwd(dirname(current_path))
+getwd()
+setwd("..")
+setwd("Data")
+
+#### 0. Loading data ####
+##Test w/ Iris
+# Use asterisk to specify all attributes for download
+irisALL <- dbGetQuery(con, "SELECT * FROM iris")
+# Use attribute names to specify specific attributes for download
+irisSELECT <- dbGetQuery(con, "SELECT SepalLengthCm, SepalWidthCm FROM iris")
+## Load time series
+dbListTables(con)
+dbListFields(con, "yr_2006")
+
+Id <- c("yr_2006", "yr_2007", "yr_2008", "yr_2009", "yr_2010")
+#sqlcmd <- paste("SELECT Date, Time, Sub_metering_1, Sub_metering_2, Sub_metering_3 FROM", Id, sep = " ")
+sqlcmd <- paste("SELECT * FROM", Id, sep = " ")
+list_all_raw <- lapply(sqlcmd, function(x) dbGetQuery(con, x))
+df_raw_all <- do.call(rbind, list_all_raw)                                   
+df_ycompl <- bind_rows(list_all_raw[[2]], list_all_raw[[3]], list_all_raw[[4]])
+## Investigate dfs
+str(df_list[[1]])
+str(df_list[[2]])
+str(df_list[[3]])
+str(df_list[[4]])
+str(df_list[[5]])
+summary(df_list[[1]]) 
+head(df_list[[5]]) #2006 12.16 - 12.31, complete: 2007, 2008, 2009, 2010:-11.26
+tail(df_list[[5]])
+
+#### Pre-processing ####
+## Creating DateTime attribute
+# Combine Date and Time attribute values in a new attribute column
+df_ycompl <- cbind(df_ycompl, paste(df_ycompl$Date, df_ycompl$Time), stringsAsFactors = FALSE)
+colnames(df_ycompl)[ncol(df_ycompl)] <- "DateTime"
+
+# Move the DateTime attribute within the dataset
+df_ycompl <- df_ycompl[, c(ncol(df_ycompl), 1:(ncol(df_ycompl)-1))]
+head(df_ycompl)
+
+# Convert DateTime from POSIXlt to POSIXct 
+df_ycompl$DateTime <- as.POSIXct(df_ycompl$DateTime, "%Y/%m/%d %H:%M:%S")
+
+# Add the time zone
+attr(df_ycompl$DateTime, "tzone") <- "Europe/Paris"
+
+# Inspect the data types
+str(df_ycompl)
+
+## Add missing values
+df_ycompl1 <- pad(df_ycompl, break_above = 2) 
+
+
+which(is.na(df_ycompl1))
+which(row.names(df_ycompl1) == "1747686")
+df_ycompl1[which((is.na(df_ycompl1))), ]
+
+diff1 <- anti_join(df_ycompl1, df_ycompl, by = NULL)
+
+
+df_ycompl1 <- na_interpolation(df_ycompl1, option = "spline")
+
+#sum(df_ycompl$Global_active_power)/3/60
+
+# Create "year" attribute with lubridate
+df_ycompl1$Date <- date(df_ycompl1$DateTime)
+#df_ycompl1$Time <- tim(df_ycompl1$DateTime)
+df_ycompl1$year <- year(df_ycompl1$DateTime)
+df_ycompl1$quart <- quarter(df_ycompl1$DateTime)
+df_ycompl1$month <- month(df_ycompl1$DateTime)
+df_ycompl1$week <- week(df_ycompl1$DateTime)
+df_ycompl1$weekday <- weekdays(df_ycompl1$DateTime)
+df_ycompl1$day <- day(df_ycompl1$DateTime)
+df_ycompl1$hour <- hour(df_ycompl1$DateTime)
+df_ycompl1$min <- minute(df_ycompl1$DateTime)
+
+#df_ycompl <- df_ycompl[, c(1:11, ncol(df_ycompl), 12:13)]
+head(df_ycompl)
+
+str(df_ycompl[1])
+ggplot(df_ycompl1, aes(x = Date, y = Global_active_power)) + geom_smooth()
+ggplot(df_ycompl1, aes(x = DateTime, y = Global_active_power)) + geom_smooth(method = "loess")
+ggplot(df_ycompl1, aes(x = DateTime, y = Global_active_power)) + geom_line()
+
+dygraph(df_ycompl1[, c(1,5)])

@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1564667906348.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "2859F80F",
+    "lastKnownWriteTime" : 1777962350192,
+    "last_content_update" : 1564667906348,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "9D151FCE",
+        "caption" : "df_ycompl1",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=df_ycompl1&cache_key=9D151FCE",
+        "displayedObservations" : "1578240",
+        "environment" : "",
+        "expression" : "df_ycompl1",
+        "object" : "df_ycompl1",
+        "preview" : "0",
+        "totalObservations" : "1578240",
+        "variables" : "19"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

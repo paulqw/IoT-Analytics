@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1564666627457.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "38A5B12D",
+    "lastKnownWriteTime" : 2466321603649696627,
+    "last_content_update" : 1564666627457,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "561E7CA8",
+        "caption" : "diff1",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=diff1&cache_key=561E7CA8",
+        "displayedObservations" : "8346",
+        "environment" : "",
+        "expression" : "diff1",
+        "object" : "diff1",
+        "preview" : "0",
+        "totalObservations" : "8346",
+        "variables" : "11"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
