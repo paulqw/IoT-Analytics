@@ -1,0 +1,7 @@
+"0",""
+"0","ggplot(df_ycompl, aes(x = Sub_metering_3)) + geom_histogram() + ylim(0, 300000) +"
+"0","  theme(axis.text = element_text(size = 15)) + "
+"0","  theme(axis.title = element_text(size = 20)) +"
+"0","  xlab(""Sub_metering_1"") + ylab(""Count"") + "
+"0","  ggtitle(""Distribution of 'Sub_metering_3'"") + "
+"0","  theme(title = element_text(size = 25))"

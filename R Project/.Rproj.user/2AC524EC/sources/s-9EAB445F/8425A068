@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1564664625447.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "8425A068",
+    "lastKnownWriteTime" : 1564664563,
+    "last_content_update" : 1564674255275,
+    "path" : "C:/Users/Paul/Desktop/Ubiqum/Module 3/1.1 IoT - Exploratory Data Analysis/Smart Home Energy Consumption/R Project/IoT Smart Home Energy Consumption.R",
+    "project_path" : "IoT Smart Home Energy Consumption.R",
+    "properties" : {
+        "cursorPosition" : "120,0",
+        "scrollLine" : "101"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

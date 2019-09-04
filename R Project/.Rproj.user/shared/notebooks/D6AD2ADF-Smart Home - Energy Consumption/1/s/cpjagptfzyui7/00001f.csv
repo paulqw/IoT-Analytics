@@ -1,0 +1,15 @@
+"0","ggplot(df_ycompl, aes(x = Sub_metering_1)) + geom_histogram() + ylim(0, 10000) + 
+  theme(axis.text = element_text(size = 15)) + 
+  theme(axis.title = element_text(size = 20)) +
+  xlab(""Sub_metering_1"") + ylab(""Count"") + 
+  ggtitle(""Distribution of 'Sub_metering_1'"") + 
+  theme(title = element_text(size = 25))
+ggplot(df_ycompl, aes(x = Sub_metering_1)) + geom_density()
+"
+"0",""
+"0","ggplot(df_ycompl, aes(x = Sub_metering_2)) + geom_histogram() + ylim(0, 7500) +"
+"0","  theme(axis.text = element_text(size = 15)) + "
+"0","  theme(axis.title = element_text(size = 20)) +"
+"0","  xlab(""Sub_metering_1"") + ylab(""Count"") + "
+"0","  ggtitle(""Distribution of 'Sub_metering_2'"") + "
+"0","  theme(title = element_text(size = 25))"

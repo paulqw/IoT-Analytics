@@ -1,0 +1,152 @@
+---
+title: "IoT Smart Home Energy Consumption"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#### Load libraries & Setup ####
+install.packages("pacman")
+library(pacman)
+p_load(contrib.url, doParallel, here, readr, rstudioapi,        #parallel computing, relative path
+       #caret, C50, caretEnsemble, mboost, mlr, Metrics, randomForest, party, MASS, 
+       #ParamHelpers, hydroGOF #Classification and Regression
+       #cluster, corrplot, fpc, e1071, recipes, Hmisc, #Clustering: Corr visulization, Clustering & SVM, 
+       ggplot2, ggpubr, RColorBrewer, lattice, dygraphs, #Visualization
+       ade4, inum, reshape,  #Cleaning, Preprocessing
+       #FactoMineR, factoextra, #PCA, MCA
+       plyr, dplyr, tidyr, tidyverse, textclean, 
+       #arules, arulesViz,    # ASsociation Rules Mining: analyzing and visualize transactional data
+       #markdown, shiny, tinytex, rmdformats, knitr #html docu, dashboard, Latex for PDF docu
+       RMySQL, lubridate # Time Series: MySQL, functions for DateTime
+       #BBmisc, asbio
+)
+
+## Enable parallel computing
+cl <- makePSOCKcluster(4)
+registerDoParallel(cl)
+
+## Disable scientific notation
+options(scipen = 999)
+
+## Create a database connection 
+con = dbConnect(MySQL(), user='deepAnalytics', password='Sqltask1234!', 
+                dbname='dataanalytics2018', 
+                host='data-analytics-2018.cbrosir2cswx.us-east-1.rds.amazonaws.com')
+```
+
+```{r Load data, message=FALSE, warning=FALSE, include=FALSE}
+Id <- c("yr_2006", "yr_2007", "yr_2008", "yr_2009", "yr_2010")
+sqlcmd <- paste("SELECT Date, Time, Sub_metering_1, Sub_metering_2, Sub_metering_3 FROM", Id, sep = " ")
+df_list <- lapply(sqlcmd, function(x) dbGetQuery(con, x))
+subseries_raw <- do.call(rbind, df_list)                                   
+df_ycompl <- bind_rows(df_list[[2]], df_list[[3]], df_list[[4]])
+```
+
+## Overview of raw data:
+The time series data has been obtained from UCI ML Repository using SQL - Query.
+The raw data has the following properties and variables.  
+
+Original data from database:
+*Data Set Characteristics: Multivariate, Time-Series
+*Number of Instances: 2075259 
+*Attribute Characteristics: Real
+*Number of Attributes: 9
+*Percentage of missing values: ~1.25 %
+*Time horizon:
++2006: 16.12. - 31.12.
++complete: 2007, 2008, 2009
++2010: - 26.11.
+
+Variable name         | Unit      | Description                                                      |
+--------------------- |---------- | ---------------------------------------------------------------- |
+date	                |dd/mm/yyyy | Date                                                             |
+time	                |hh:mm:ss   | Time                                                             |
+global_active_power	  |kW         | household global min-avg active power                            |
+global_reactive_power |kW   	    | household global min-avg reactive power                          |
+voltage	              |V        	| min-avg voltage                                                  |
+global_intensity	    |A        	| household global min-avg current                                 |
+sub_metering_1	      |W          | kitchen: dishwasher, oven and a microwave                        |
+sub_metering_2	      |W          | laundry room: washing-machine, tumble-drier, refrigerator, light |
+sub_metering_3	      |W          | electric water-heater and an air-conditioner                     |
+
+```{r}
+#### Pre-processing ####
+## Creating DateTime attribute
+# Combine Date and Time attribute values in a new attribute column
+df_ycompl <- cbind(df_ycompl, paste(df_ycompl$Date, df_ycompl$Time), stringsAsFactors = FALSE)
+colnames(df_ycompl)[6] <- "DateTime"
+
+# Move the DateTime attribute within the dataset
+df_ycompl <- df_ycompl[, c(ncol(df_ycompl), 1:(ncol(df_ycompl)-1))]
+head(df_ycompl)
+
+# Convert DateTime from POSIXlt to POSIXct 
+df_ycompl$DateTime <- as.POSIXct(df_ycompl$DateTime, "%Y/%m/%d %H:%M:%S")
+
+# Add the time zone
+attr(df_ycompl$DateTime, "tzone") <- "Europe/Paris"
+
+# Inspect the data types
+str(df_ycompl)
+
+# Create "year" attribute with lubridate
+df_ycompl$year <- year(df_ycompl$DateTime)
+df_ycompl$quart <- quarter(df_ycompl$DateTime)
+df_ycompl$month <- month(df_ycompl$DateTime)
+df_ycompl$week <- week(df_ycompl$DateTime)
+df_ycompl$weekday <- weekdays(df_ycompl$DateTime)
+df_ycompl$day <- day(df_ycompl$DateTime)
+df_ycompl$hour <- hour(df_ycompl$DateTime)
+df_ycompl$min <- minute(df_ycompl$DateTime)
+#df_ycompl <- df_ycompl[, c(1:11, ncol(df_ycompl), 12:13)]
+head(df_ycompl)
+```
+
+```{r Summary statistics}
+# calculate the mean, mode, standard deviation, quartiles 
+# -Which sub-meter is using the most power? The least? Is there anything to learn from the max and min? 
+# -Optional: Research other basic statistics available in R that may yield additional insights.
+
+Stats <- bind_rows(summary(df_ycompl$Sub_metering_1), summary(df_ycompl$Sub_metering_2), summary(df_ycompl$Sub_metering_3)) 
+Stats <- cbind(Stats, colnames(df_ycompl)[4:6])
+colnames(Stats)[7] <- "Variables"
+Stats <- Stats[, c(ncol(Stats), 1:ncol(Stats)-1)]
+
+Stats
+
+```
+
+```{r Visualization of distribution}
+# & characterization of the distribution and maybe more.
+ggplot(df_ycompl, aes(x = Sub_metering_1)) + geom_histogram() + ylim(0, 10000) + 
+  theme(axis.text = element_text(size = 15)) + 
+  theme(axis.title = element_text(size = 20)) +
+  xlab("Sub_metering_1") + ylab("Count") + 
+  ggtitle("Distribution of 'Sub_metering_1'") + 
+  theme(title = element_text(size = 25))
+ggplot(df_ycompl, aes(x = Sub_metering_1)) + geom_density()
+
+ggplot(df_ycompl, aes(x = Sub_metering_2)) + geom_histogram() + ylim(0, 7500) +
+  theme(axis.text = element_text(size = 15)) + 
+  theme(axis.title = element_text(size = 20)) +
+  xlab("Sub_metering_1") + ylab("Count") + 
+  ggtitle("Distribution of 'Sub_metering_2'") + 
+  theme(title = element_text(size = 25))
+ggplot(df_ycompl, aes(x = Sub_metering_2)) + geom_density()
+
+ggplot(df_ycompl, aes(x = Sub_metering_3)) + geom_histogram() + ylim(0, 300000) +
+  theme(axis.text = element_text(size = 15)) + 
+  theme(axis.title = element_text(size = 20)) +
+  xlab("Sub_metering_1") + ylab("Count") + 
+  ggtitle("Distribution of 'Sub_metering_3'") + 
+  theme(title = element_text(size = 25))
+ggplot(df_ycompl, aes(x = Sub_metering_3)) + geom_density()
+```
+
+
+```{r Visualization}
+#dygraph(df_ycompl[,c(4:6, 13)])
+
+```
+
